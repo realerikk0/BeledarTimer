@@ -127,13 +127,27 @@
     <script>
         let nextEventTime;
 
-        function calculateNextEvent(lastEvent) {
-            const interval = 3 * 60 * 60 * 1000; // 3小时间隔
+        function calculateNextEvent() {
             const now = new Date();
-            let nextEvent = new Date(lastEvent);
+            const beijingTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Shanghai"}));
+            
+            // 计算当天的 2:00, 5:00, 8:00, 11:00, 14:00, 17:00, 20:00, 23:00
+            const eventTimes = [2, 5, 8, 11, 14, 17, 20, 23];
+            
+            let nextEvent = new Date(beijingTime);
+            nextEvent.setHours(eventTimes[0], 0, 0, 0);
 
-            while (nextEvent <= now) {
-                nextEvent.setTime(nextEvent.getTime() + interval);
+            for (let hour of eventTimes) {
+                nextEvent.setHours(hour, 0, 0, 0);
+                if (nextEvent > beijingTime) {
+                    break;
+                }
+            }
+
+            // 如果所有时间都过去了，设置为第二天的 2:00
+            if (nextEvent <= beijingTime) {
+                nextEvent.setDate(nextEvent.getDate() + 1);
+                nextEvent.setHours(2, 0, 0, 0);
             }
 
             return nextEvent;
@@ -152,7 +166,8 @@
 
         function updateCountdown() {
             const now = new Date();
-            const timeLeft = nextEventTime - now;
+            const beijingNow = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Shanghai"}));
+            const timeLeft = nextEventTime - beijingNow;
             
             if (timeLeft <= 0) {
                 updateTimes();
@@ -168,17 +183,15 @@
         }
 
         function updateTimes() {
-            const lastKnownEvent = new Date();
-            lastKnownEvent.setHours(20, 0, 0, 0); // 设置为最后已知的事件时间（北京时间）
-
-            nextEventTime = calculateNextEvent(lastKnownEvent);
+            nextEventTime = calculateNextEvent();
             document.getElementById('nextTime').textContent = formatDate(nextEventTime);
 
             updateCountdown();
 
             let futureEventsHtml = '<h3>接下来的4次出现时间：</h3><ul>';
+            let futureEvent = new Date(nextEventTime);
             for (let i = 1; i <= 4; i++) {
-                const futureEvent = new Date(nextEventTime.getTime() + i * 3 * 60 * 60 * 1000);
+                futureEvent.setTime(futureEvent.getTime() + 3 * 60 * 60 * 1000);
                 futureEventsHtml += `<li>${formatDate(futureEvent, Intl.DateTimeFormat().resolvedOptions().timeZone)}</li>`;
             }
             futureEventsHtml += '</ul>';
