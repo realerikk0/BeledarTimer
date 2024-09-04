@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>贝雷达尔之裔计时器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+        }
+        h1 {
+            color: #333;
+        }
+        .time-label {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        #nextTime, #countdown {
+            font-size: 36px;
+            font-weight: bold;
+            color: #007bff;
+            margin: 10px 0 20px;
+        }
+        #futureEvents {
+            text-align: left;
+            margin-top: 20px;
+        }
+        .time-note {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 10px;
+        }
+        .author-info {
+            margin-top: 20px;
+            font-style: italic;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>贝雷达尔之裔计时器</h1>
+        <div class="time-label">下一次遁入暗影的时间（北京时间）：</div>
+        <div id="nextTime"></div>
+        <div class="time-label">距离下一次遁入暗影还有：</div>
+        <div id="countdown"></div>
+        <div id="futureEvents"></div>
+        <p class="time-note">注：所有时间均已转换为您的本地时区</p>
+        <div class="author-info">
+            作者：埃里克兰谢尔
+        </div>
+    </div>
+
+    <script>
+        let nextEventTime;
+
+        function calculateNextEvent(lastEvent) {
+            const interval = 3 * 60 * 60 * 1000; // 3小时间隔
+            const now = new Date();
+            let nextEvent = new Date(lastEvent);
+
+            while (nextEvent <= now) {
+                nextEvent.setTime(nextEvent.getTime() + interval);
+            }
+
+            return nextEvent;
+        }
+
+        function formatDate(date, timeZone = 'Asia/Shanghai') {
+            return date.toLocaleString('zh-CN', {
+                timeZone: timeZone,
+                month: 'numeric',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            });
+        }
+
+        function updateCountdown() {
+            const now = new Date();
+            const timeLeft = nextEventTime - now;
+            
+            if (timeLeft <= 0) {
+                updateTimes();
+                return;
+            }
+
+            const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+            
+            document.getElementById('countdown').textContent = 
+                `${hours}小时${minutes}分钟${seconds}秒`;
+        }
+
+        function updateTimes() {
+            const lastKnownEvent = new Date();
+            lastKnownEvent.setHours(20, 0, 0, 0); // 设置为最后已知的事件时间（北京时间）
+
+            nextEventTime = calculateNextEvent(lastKnownEvent);
+            document.getElementById('nextTime').textContent = formatDate(nextEventTime);
+
+            updateCountdown();
+
+            let futureEventsHtml = '<h3>接下来的4次出现时间：</h3><ul>';
+            for (let i = 1; i <= 4; i++) {
+                const futureEvent = new Date(nextEventTime.getTime() + i * 3 * 60 * 60 * 1000);
+                futureEventsHtml += `<li>${formatDate(futureEvent, Intl.DateTimeFormat().resolvedOptions().timeZone)}</li>`;
+            }
+            futureEventsHtml += '</ul>';
+            document.getElementById('futureEvents').innerHTML = futureEventsHtml;
+        }
+
+        updateTimes();
+        setInterval(updateCountdown, 1000); // 每秒更新一次倒计时
+        setInterval(updateTimes, 60000); // 每分钟更新一次整体时间
+    </script>
+</body>
+</html>
